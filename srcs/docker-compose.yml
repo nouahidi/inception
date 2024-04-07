@@ -1,76 +1,77 @@
 version: "3.8"
 
-volumes:
-  mariadb:
-   name: mariadb
-   driver: local
-   driver_opts:
-    device: /home/nouahidi/Desktop/incep/data/mariadb
-    o : bind
-    type : none
-  wordpress:
-    name: wordpress
-    driver: local
-    driver_opts:
-      device: /home/nouahidi/Desktop/incep/data/wordpress
-      o : bind
-      type : none
-networks:
-  inception:
-   name: inception
-
 services:
-  #mariadb
+#mariadb
   mariadb:
    image: mariadb:nouahidi
    container_name: mariadb
    build: ./requirements/mariadb
-   volumes:
-     - mariadb:/var/lib/mysql
+   restart: always
    env_file :
     - .env
+   volumes:
+     - mariadb:/var/lib/mysql
    networks :
     - inception
-   restart: always
 #nginx
   nginx:
+    depends_on:
+      - wordpress
     image: nginx:nouahidi
     container_name: nginx
     build: ./requirements/nginx
     ports:
       - "443:443"
-    depends_on:
-      - wordpress
+    restart: always
     volumes:
       - wordpress:/var/www/wordpress
     networks:
       - inception
-    restart: always
 #wordpress
   wordpress:
+    depends_on:
+      - mariadb
     image: wordpress:nouahidi
     container_name: wordpress
     build: ./requirements/wordpress
-    depends_on:
-      - mariadb
+    restart: always
     volumes:
       - wordpress:/var/www/wordpress
     env_file :
       - .env
     networks:
       - inception
-    restart: always
-  #bonus part
+#adminer BONUS
   adminer:
     image: adminer:nouahidi
     container_name: adminer
     build: ./requirements/bonus/adminer
     depends_on:
       - mariadb
+    env_file :
+      - .env
     networks:
       - inception
     ports:
       - 8080:8080
     restart: always
-    env_file :
-      - .env
+
+# create volumes
+volumes:
+  wordpress:
+    name: wordpress
+    driver: local
+    driver_opts:
+      device: /home/nouahidi/data/wordpress
+      o : bind
+      type : none
+  mariadb:
+   name: mariadb
+   driver: local
+   driver_opts:
+    device: /home/nouahidi/data/mariadb
+    o : bind
+    type : none
+networks:
+  inception:
+   name: inception
